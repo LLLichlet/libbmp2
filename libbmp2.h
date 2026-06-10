@@ -1,9 +1,9 @@
-#ifndef __LIBBMP_H__
-#define __LIBBMP_H__
+#ifndef __LIBBMP2_H__
+#define __LIBBMP2_H__
 
 #define BMP_MAGIC 19778
 
-#define BMP_GET_PADDING(a) ((a) % 4)
+#define BMP_GET_PADDING(a) ((4 - ((a) % 4)) % 4)
 
 enum bmp_error
 {
@@ -19,7 +19,7 @@ typedef struct _bmp_header
 	unsigned int   bfSize;
 	unsigned int   bfReserved;
 	unsigned int   bfOffBits;
-	
+
 	unsigned int   biSize;
 	int            biWidth;
 	int            biHeight;
@@ -40,19 +40,36 @@ typedef struct _bmp_pixel
 	unsigned char red;
 } bmp_pixel;
 
-// This is faster than a function call
+/* This is faster than a function call */
 #define BMP_PIXEL(r,g,b) ((bmp_pixel){(b),(g),(r)})
+
+typedef struct _bmp_palette_entry
+{
+	unsigned char blue;
+	unsigned char green;
+	unsigned char red;
+	unsigned char reserved;
+} bmp_palette_entry;
+
+typedef struct _bmp_palette
+{
+	bmp_palette_entry *entry;
+	unsigned int       n_entries;
+} bmp_palette;
 
 typedef struct _bmp_img
 {
-	bmp_header   img_header;
-	bmp_pixel  **img_pixels;
+	bmp_header      img_header;
+	bmp_pixel     **img_pixels;
+	unsigned char **img_pixels_idx;
+	bmp_palette    *img_palette;
 } bmp_img;
 
-// BMP_HEADER
+/* BMP_HEADER */
 void            bmp_header_init_df             (bmp_header*,
                                                 const int,
-                                                const int);
+                                                const int,
+                                                const unsigned short);
 
 enum bmp_error  bmp_header_write               (const bmp_header*,
                                                 FILE*);
@@ -60,17 +77,33 @@ enum bmp_error  bmp_header_write               (const bmp_header*,
 enum bmp_error  bmp_header_read                (bmp_header*,
                                                 FILE*);
 
-// BMP_PIXEL
+/* BMP_PALETTE */
+void            bmp_palette_init               (bmp_palette*,
+                                                const unsigned int);
+
+void            bmp_palette_free               (bmp_palette*);
+
+/* BMP_PIXEL */
 void            bmp_pixel_init                 (bmp_pixel*,
                                                 const unsigned char,
                                                 const unsigned char,
                                                 const unsigned char);
 
-// BMP_IMG
+void            bmp_pixel_1bit_set             (bmp_img*,
+                                                const size_t,
+                                                const size_t,
+                                                const unsigned char);
+
+unsigned char   bmp_pixel_1bit_get             (const bmp_img*,
+                                                const size_t,
+                                                const size_t);
+
+/* BMP_IMG */
 void            bmp_img_alloc                  (bmp_img*);
 void            bmp_img_init_df                (bmp_img*,
                                                 const int,
-                                                const int);
+                                                const int,
+                                                const unsigned short);
 void            bmp_img_free                   (bmp_img*);
 
 enum bmp_error  bmp_img_write                  (const bmp_img*,
@@ -79,4 +112,4 @@ enum bmp_error  bmp_img_write                  (const bmp_img*,
 enum bmp_error  bmp_img_read                   (bmp_img*,
                                                 const char*);
 
-#endif /* __LIBBMP_H__ */
+#endif /* __LIBBMP2_H__ */
